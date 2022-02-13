@@ -42,7 +42,7 @@ end
 
 def error_for_list_name(name)
   if !(1..100).cover? name.size
-    'List name must be between 1 and 100 characters.'
+    'List name must be between 1 and 100 characters.' unless (1..100).cover? name.size
   elsif session[:lists].any? { |list| list[:name] == name }
     'List name must be unique.'
   end
@@ -97,9 +97,7 @@ post '/lists/:id/destroy' do
 end
 
 def error_for_todo(name)
-  if !(1..100).cover? name.size
-    "Todo must be between 1 and 100 characters."
-  end
+  'Todo must be between 1 and 100 characters.' unless (1..100).cover? name.size
 end
 
 # Add a new todo to a list
@@ -113,8 +111,20 @@ post '/lists/:list_id/todos' do
     session[:error] = error
     erb :list, layout: :layout
   else
-    @list[:todos] << {name: params[:todo], completed: false}
+    @list[:todos] << { name: params[:todo], completed: false }
     session[:success] = 'The todo was added.'
     redirect "/lists/#{@list_id}"
   end
+end
+
+# Delete a todo from a list
+post '/lists/:list_id/todos/:id/destroy' do
+  @list_id = params[:list_id].to_i
+  @list = session[:lists][@list_id]
+
+  todo_id = params[:id].to_i
+  @list[:todos].delete_at(todo_id)
+  session[:success] = 'The todo has been deleted.'
+
+  redirect "/lists/#{@list_id}"
 end
