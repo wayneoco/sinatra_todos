@@ -73,6 +73,14 @@ post '/lists/:id' do
   end
 end
 
+# Delete a list
+post '/lists/:id/destroy' do
+  id = params[:id].to_i
+  session[:lists].delete_at(id)
+  session[:success] = 'The list has been deleted.'
+  redirect '/lists'
+end
+
 # create a new list
 post '/lists' do
   list_name = params[:list_name].strip
