@@ -10,7 +10,7 @@ end
 
 helpers do
   def list_complete?(list)
-    list[:todos].size > 0 && todos_remaining_count(list).zero?
+    !list[:todos].empty? && todos_remaining_count(list).zero?
   end
 
   def list_class(list)
@@ -22,7 +22,21 @@ helpers do
   end
 
   def todos_remaining_count(list)
-    list[:todos].select { |todo| !todo[:completed] }.size
+    list[:todos].reject { |todo| todo[:completed] }.size
+  end
+
+  def sort_lists(lists, &block)
+    complete_lists, incomplete_lists = lists.partition { |list| list_complete?(list) }
+
+    incomplete_lists.each { |list| yield list, lists.index(list) }
+    complete_lists.each { |list| yield list, lists.index(list) }
+  end
+
+  def sort_todos(todos, &block)
+    complete_todos, incomplete_todos = todos.partition { |todo| todo[:completed] }
+
+    incomplete_todos.each { |todo| yield todo, todos.index(todo) }
+    complete_todos.each { |todo| yield todo, todos.index(todo) }
   end
 end
 
