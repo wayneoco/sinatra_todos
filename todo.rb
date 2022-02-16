@@ -11,7 +11,7 @@ end
 
 helpers do
   def list_complete?(list)
-    !list[:todos].empty? && todos_remaining_count(list).zero?
+    todos_count(list) > 0 && todos_remaining_count(list).zero?
   end
 
   def list_class(list)
@@ -45,8 +45,8 @@ before do
   session[:lists] ||= []
 end
 
-def load_list(index)
-  list = session[:lists][index] if index && session[:lists][index]
+def load_list(id)
+  list = session[:lists].find { |list| list[:id] == id }
   return list if list
 
   session[:error] = 'The specified list was not found.'
@@ -63,6 +63,11 @@ end
 
 def error_for_todo(name)
   'Todo must be between 1 and 100 characters.' unless (1..100).cover? name.size
+end
+
+def next_element_id(elements)
+  max = elements.map { |element| element[:id] }.max || 0
+  max + 1
 end
 
 def next_todo_id(todos)
@@ -102,7 +107,8 @@ post '/lists' do
     session[:error] = error
     erb :new_list, layout: :layout
   else
-    session[:lists] << { name: list_name, todos: [] }
+    id = next_element_id(session[:lists])
+    session[:lists] << { id: id, name: list_name, todos: [] }
     session[:success] = 'The list has been created.'
     redirect '/lists'
   end
@@ -136,11 +142,11 @@ end
 # Delete a list
 post '/lists/:id/destroy' do
   id = params[:id].to_i
-  session[:lists].delete_at(id)
+  session[:lists].reject! { |list| list[:id] == id }
+  session[:success] = 'The list has been deleted.'
   if env['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'
     '/lists'
   else
-    session[:success] = 'The list has been deleted.'
     redirect '/lists'
   end
 end
@@ -156,7 +162,7 @@ post '/lists/:list_id/todos' do
     session[:error] = error
     erb :list, layout: :layout
   else
-    id = next_todo_id(@list[:todos])
+    id = next_element_id(@list[:todos])
     @list[:todos] << { id: id, name: text, completed: false }
 
     session[:success] = 'The todo was added.'
